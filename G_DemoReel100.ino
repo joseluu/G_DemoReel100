@@ -43,14 +43,14 @@ SSD1306Wire  oled(0x3c, D3, D5);
 //#define CLK_PIN   4
 
 #define TEST_ON_PCB_STRING 1
-#if PCB_TEST_STRING
-#define LED_TYPE    WS2812
-#define COLOR_ORDER GRB
-#define NUM_LEDS    300
+#if TEST_ON_PCB_STRING
+  #define LED_TYPE    WS2812
+  #define COLOR_ORDER GRB
+  #define NUM_LEDS    300
 #else
-#define LED_TYPE    UCS1903B
-#define COLOR_ORDER RGB
-#define NUM_LEDS    150
+  #define LED_TYPE    UCS1903B
+  #define COLOR_ORDER RGB
+  #define NUM_LEDS    150
 #endif
 
 CRGB leds[NUM_LEDS];
