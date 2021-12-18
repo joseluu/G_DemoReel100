@@ -42,7 +42,7 @@ SSD1306Wire  oled(0x3c, D3, D5);
 #define DATA_PIN    13
 //#define CLK_PIN   4
 
-#define TEST_ON_PCB_STRING 0
+#define TEST_ON_PCB_STRING 1
 #if PCB_TEST_STRING
 #define LED_TYPE    WS2812
 #define COLOR_ORDER GRB
@@ -59,6 +59,7 @@ CRGB leds[NUM_LEDS];
 #define FRAMES_PER_SECOND  120
 
 void setup() {
+    bool wifiIsConnected=false;
     oledSetup();
     Serial.begin(115200);//initialize the serial monitor
     WiFi.mode(WIFI_STA);
@@ -83,7 +84,7 @@ void setup() {
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
 typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm };
+SimplePatternList gPatterns = {confetti, sinelon, juggle, bpm };
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
@@ -96,7 +97,8 @@ void loop()
   // send the 'leds' array out to the actual LED strip
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(1000/FRAMES_PER_SECOND); 
+  //FastLED.delay(1000/FRAMES_PER_SECOND); 
+  OTAdelay(1000/FRAMES_PER_SECOND); 
 
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
@@ -214,7 +216,12 @@ void displaySignalLevel() {
     oled.setFont(ArialMT_Plain_10);
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     char levelStr[30];
-    sprintf(levelStr,"@%hhddb",WiFi.RSSI());
+    int8_t rssi=WiFi.RSSI();
+
+    if (rssi==0)
+        esp_restart();
+    
+    sprintf(levelStr,"@%hhddb",rssi);
     //Serial.println(levelStr);
     oled.setColor(BLACK);
     oled.fillRect(90,10,30,10);
@@ -222,7 +229,6 @@ void displaySignalLevel() {
     oled.drawString(90,10,levelStr);
     oled.display();
 }
-bool wifiIsConnected=false;
 bool doWifiWait(){
       // Wait for connection
     unsigned int count=0;
@@ -258,7 +264,13 @@ bool doWifiWait(){
     displaySignalLevel();
     return true;
 }
-
+void OTAdelay(int ms) {
+  uint32_t moment = millis();
+  while (millis() - moment < ms) {
+    ArduinoOTA.handle();
+    yield();
+  }
+}
 void setupOTA() {
   // Port defaults to 3232
   // ArduinoOTA.setPort(3232);
